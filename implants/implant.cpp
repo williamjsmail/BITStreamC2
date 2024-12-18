@@ -191,4 +191,4 @@ int main() {
     return 0;
 }
 
-// clang++ -o smail.exe smail.cpp -lole32 -lws2_32 -lruntimeobject -luuid
+// clang++ -o implant.exe implant.cpp -lole32 -lws2_32 -lruntimeobject -luuid
