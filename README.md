@@ -12,9 +12,7 @@ This C2 is VERY far from done and VERY far from something that should be taken s
 - And much, much, much more.
 
 ## Usage
-Getting started with BITStreamC2 is as easy as running the bsc2.py Python script:
-   '''bash
-   python bsc2.py
+Getting started with BITStreamC2 is as easy as running the bsc2.py Python script. Everything else happens behind the scenes: python bsc2.py
 
 ## Features
 
