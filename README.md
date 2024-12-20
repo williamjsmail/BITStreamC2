@@ -1,5 +1,7 @@
 # BITStreamC2
 
+![Oakley and Kota](bsc2.png "Cover art") 
+
 This project demonstrates a Command and Control (C2) implant that uses **Background Intelligent Transfer Service (BITS)** on Windows to perform command execution and result reporting. The implant periodically fetches commands from a remote server, executes them, and uploads the results.
 
 ### Note
