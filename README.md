@@ -2,6 +2,15 @@
 
 This project demonstrates a Command and Control (C2) implant that uses **Background Intelligent Transfer Service (BITS)** on Windows to perform command execution and result reporting. The implant periodically fetches commands from a remote server, executes them, and uploads the results.
 
+### Note
+This C2 is VERY far from done and VERY far from something that should be taken seriously. There are many issues I am still working out, as well as features I want to add to make it a better experience to use, such as:
+- Ensuring reliability of implants.
+- Adding the option to use HTTPS and SMB.
+- More options for generating implants.
+- Improve the CLI.
+- Integrate Powershell obfuscation methods for the PS implant.
+- And much, much, much more.
+
 ## Features
 
 - **Command Fetching**: The implant downloads commands from a server in JSON format.
@@ -16,10 +25,14 @@ The implant is a Windows executable written in C++ that performs the following t
 - **Execution**: Executes the command and saves the output to `response.txt`.
 - **Uploading Results**: Uploads the `response.txt` file to the server.
 
+### 2. **Powershell**
+This implant is written in Powershell and has the same general functionality as the C++ implant.
+
 ### 2. **Server**
 A BITS compliant HTTP server that:
 - Serves `command.json` at `/commands/command.json`.
 - Receives the `response.txt` file at `/uploads/response.txt`.
+- Handles BITS_POST requests.
 
 ---
 
