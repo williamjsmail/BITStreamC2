@@ -5,7 +5,6 @@ from colorama import Fore, Style
 from utils import log_error, log_info
 
 def start_server(server_script, log_file):
-    """Start the server script and capture output for debugging."""
     if not os.path.exists(server_script):
         print(f"{Fore.RED}[-] Server script '{server_script}' not found.{Style.RESET_ALL}")
         log_error(f"Server script '{server_script}' not found", log_file)
@@ -36,7 +35,6 @@ def start_server(server_script, log_file):
         return None
 
 def stop_server(server_process, log_file):
-    """Stop the server process."""
     if server_process:
         print(f"{Fore.CYAN}[*] Stopping server script...{Style.RESET_ALL}")
         log_info("Stopping server script", log_file)

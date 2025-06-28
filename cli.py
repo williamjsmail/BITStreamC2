@@ -17,7 +17,6 @@ class BITStreamShell(Cmd):
         pass
 
     def do_list(self, arg):
-        """List all registered agents."""
         try:
             self.agent_manager.check_notify_file()
             agents = self.agent_manager.get_agents()
@@ -39,7 +38,6 @@ class BITStreamShell(Cmd):
             log_error(f"Error listing agents: {e}", self.agent_manager.log_file)
 
     def do_select(self, arg):
-        """Select an agent to interact with: select agent <agent_id>"""
         try:
             args = arg.split()
             if len(args) != 2 or args[0] != "agent":
@@ -58,14 +56,12 @@ class BITStreamShell(Cmd):
             log_error(f"Error selecting agent: {e}", self.agent_manager.log_file)
 
     def do_exitagent(self, arg):
-        """Exit the current agent prompt."""
         if self.agent_manager.selected_agent:
             print(f"{Fore.YELLOW}[*] Exiting agent: {self.agent_manager.selected_agent}{Style.RESET_ALL}")
             self.agent_manager.selected_agent = None
             self.prompt = f"{Fore.CYAN}BSC2[None]>{Style.RESET_ALL} "
 
     def do_set(self, arg):
-        """Set a command for the selected agent: set command <command>"""
         try:
             args = arg.split(maxsplit=1)
             if len(args) != 2 or args[0] != "command" or not self.agent_manager.selected_agent:
@@ -81,7 +77,6 @@ class BITStreamShell(Cmd):
             log_error(f"Error setting command: {e}", self.agent_manager.log_file)
 
     def do_show(self, arg):
-        """Show details: show agents | show commands"""
         try:
             args = arg.split()
             if not args:
@@ -107,7 +102,6 @@ class BITStreamShell(Cmd):
             log_error(f"Error showing details: {e}", self.agent_manager.log_file)
 
     def do_remove(self, arg):
-        """Remove a specific agent: remove agent <agent_id>"""
         try:
             args = arg.split()
             if len(args) != 2 or args[0] != "agent":
@@ -119,8 +113,7 @@ class BITStreamShell(Cmd):
             print(f"{Fore.RED}[-] Error removing agent: {e}{Style.RESET_ALL}")
             log_error(f"Error removing agent: {e}", self.agent_manager.log_file)
 
-    def do_prune(self, arg):
-        """Prune stale agents offline for > timeout: prune"""
+    def do_prune(self):
         try:
             pruned = self.agent_manager.prune_stale_agents()
             if pruned:
@@ -132,7 +125,6 @@ class BITStreamShell(Cmd):
             log_error(f"Error pruning agents: {e}", self.agent_manager.log_file)
 
     def do_debug(self, arg):
-        """Show debug information about the C2 environment."""
         try:
             print(f"{Fore.YELLOW}=== Debug Status ==={Style.RESET_ALL}")
             print(f"{Fore.YELLOW}[*] Notify file: {self.agent_manager.notify_file}{Style.RESET_ALL}")
@@ -156,7 +148,6 @@ class BITStreamShell(Cmd):
             log_error(f"Error in debug: {e}", self.agent_manager.log_file)
 
     def do_generate(self, arg):
-        """Generate an implant: generate implant <language (ps1/cpp)>"""
         try:
             from generate_implant import gen
             args = arg.split()
@@ -169,8 +160,7 @@ class BITStreamShell(Cmd):
             print(f"{Fore.RED}[-] Error generating implant: {e}{Style.RESET_ALL}")
             log_error(f"Error generating implant: {e}", self.agent_manager.log_file)
 
-    def do_exit(self, arg):
-        """Exit the BITStreamC2 shell."""
+    def do_exit(self):
         print(f"{Fore.YELLOW}[*] Exiting BITStreamC2 Shell.{Style.RESET_ALL}")
         return True
 

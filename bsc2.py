@@ -25,7 +25,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 
 def monitor_notify_file(agent_manager):
-    """Periodically check notify.txt for new agents."""
     while True:
         try:
             log_info("Starting notify file check", agent_manager.log_file)
