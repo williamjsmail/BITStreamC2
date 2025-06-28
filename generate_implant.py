@@ -7,8 +7,8 @@ init(strip=False, autoreset=True)
 def gen(lang):
     ip = input("[implant] Specify the IP of the server to call back to: ")
     s_time = input("[implant] How long would you like the implant to sleep (seconds): ")
-    out_file = input("[implant] What would you like to name your implant (extension will be added): ")
-    agentname = input("[implant] What would you like to name the implant (must be a unique identifier): ")
+    out_file = input("[implant] What is the name of the output file (extension will be added): ")
+    agentname = input("[implant] What is the Agent ID (must be a unique identifier): ")
 
     if lang == "cpp":
         c_code = f'''
