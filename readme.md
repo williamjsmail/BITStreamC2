@@ -2,7 +2,7 @@
 
 **BITStreamC2** is a command-and-control (C2) framework leveraging Background Intelligent Transfer Service (BITS) to communicate between agents and a central server. It supports Windows implants in both PowerShell and C++, allowing for fileless command execution and data exfiltration.
 
-![Alt text](images/bsc2_cover.png) 
+![BSC2 Cover](images/bsc2_cover.png) 
 
 ---
 
